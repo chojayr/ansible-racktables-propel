@@ -1,0 +1,10 @@
+---
+
+- name: Install Gems required
+  gem: name={{ item }} state=present executable={{ rbenv_root }}/versions/{{ ruby_version }}/bin/gem 
+  with_items:
+    - facter
+    - psych
+    - logger
+
+

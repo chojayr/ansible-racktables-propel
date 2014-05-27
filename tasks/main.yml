@@ -1,0 +1,5 @@
+---
+# Task file for racktables-propel
+- include: rbenv.yml
+- include: gem.yml
+- include: common.yml

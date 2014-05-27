@@ -1,0 +1,23 @@
+---
+## enable if you want to use rbenv for ruby
+#- name: create symlink for rbenv ruby to /etc/alternatives
+#  file:
+#    src=/usr/local/rbenv/shims/ruby
+#    dest=/etc/alternatives/ruby
+#    owner=root
+#    group=root
+#    state=link
+    
+- name: copy the racktables-client script to /tmp
+  template:
+    src=templates/racktables-propel.rb.j2
+    dest=/tmp/racktables-propel.rb
+    owner=root
+    group=root
+    mode=0775
+
+## Run racktables-script
+- name: run the racktables-propel script
+  command: "{{ bin_root }}/ruby /tmp/racktables-propel.rb"
+
+

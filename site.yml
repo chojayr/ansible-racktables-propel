@@ -1,0 +1,10 @@
+---
+- name: run racktables-propel  
+  hosts: rtpropel
+  remote_user: root
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - include: tasks/main.yml
+ 
+

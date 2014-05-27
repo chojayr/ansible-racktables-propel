@@ -1,0 +1,22 @@
+---
+
+# username & password for racktables admin privlg
+user: rackuser
+passwd: rackpasswd
+
+#racktables server
+racktables_server: http://example.racktables.com 
+
+# http.use_ssl = ?
+use_ssl: "false"
+
+# rbenv
+rbenv_root: /usr/local/rbenv
+
+# ruby version 
+ruby_version: 1.9.3-p484
+
+bin_root: /usr/local/rbenv/shims
+
+# gem binaries
+gem_bin: /root/.gem/ruby/1.9.1/bin

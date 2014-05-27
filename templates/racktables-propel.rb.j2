@@ -1,0 +1,135 @@
+#!/usr/bin/env ruby
+##
+## Script to add server info (physical\virtual) to Racktables using Racktables api
+
+require 'rubygems'
+require 'facter'
+require 'json'
+require "net/http"
+require "uri"
+require 'yaml'
+require 'logger'
+ 
+@log = Logger.new('/var/log/racktables.log')
+@object_id = ""
+
+
+def generateFacts()
+  @log.info "Generate facts... dump on /tmp/facts_generated.yaml"
+  rejected_facts = ["sshdsakey", "sshrsakey"]
+  @outputfile = "/tmp/facts_generated.yaml"
+
+  facts = Facter.to_hash.reject { |k,v| rejected_facts.include? k }
+  File.open(@outputfile, "w") { |fh| fh.write(facts.to_yaml) }
+end
+ 
+   
+def getAllFacters()
+  @log.info "Reading facts.."
+
+  ymlres = YAML.load(open('/tmp/facts_generated.yaml'))
+  @fq = ymlres["fqdn"]
+  @dom = ymlres["domain"]
+  @hname = ymlres["hostname"]
+  @uid = ymlres["uuid"]
+  @os = ymlres["operatingsystem"]
+  @osrel = ymlres["operatingsystemrelease"]
+  @kern = ymlres["kernelrelease"]
+  @kernver = ymlres["kernelversion"]
+  @procnt = ymlres["processorcount"]
+  @mem = ymlres["memorysize"].match(/[0-9|\.]+/)[0]
+
+  virt = ymlres["virtual"]
+  if virt == "physical" then
+    @object_type_id = "4"
+  else
+    @object_type_id = "1504"
+  end
+end
+
+
+def httpConnect( url )
+  uri    = URI.parse(url)
+  user   = "{{ user }}"
+  passwd = "{{ passwd }}"
+     
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = {{ use_ssl }}
+  http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+   
+  request = Net::HTTP::Get.new(uri.request_uri)
+  request.basic_auth(user, passwd)
+  @log.info "Authenticating and verifying api request..."
+  response = http.request(request)
+  @log.info "http request sent. [#{url}]"
+  return response 
+end  
+ 
+def add_object()
+  begin
+    @log.info "Creating new object in racktables."
+    @log.info "Object name : #{@hname}"
+    @log.info "Object label : #{@hname}"
+     
+    #endpoint
+    url="{{ racktables_server }}/racktables/api.php?method=add_object&object_type_id=#{@object_type_id}&object_name=#{@hname}&object_label=#{@hname}"
+   
+    #authenticate and send POST
+    response = httpConnect(url)
+     
+    #get objectId of newly added object   
+    @objectId = response['location'].match(/([0-9]{1,5})/)[0]
+    @log.info "machine added : {{ racktables_server }}/racktables/api.php?method=get_object&object_id=#{@objectId}&include_attrs"
+
+    return @objectId
+  rescue StandardError => e
+    @log.warn "machine already existed"
+    return "NOTOK"
+  end  
+end
+
+#def generate_objectId()
+#    @log.info "Generating host object_id for future use ..."
+#    File.open(@outputfile, "a") { |fh| fh.write("\n object_id: #{@objectId}") }
+#end
+
+ 
+def update_object()
+
+  obj = YAML.load(open('/tmp/facts_generated.yaml'))
+  object_id = obj["object_id"]
+  
+  begin
+    @log.info "Adding other details of the machine..."
+     
+    #endpoint
+    url="{{ racktables_server }}/racktables/api.php?method=edit_object&#{"object_id=#{@objectId}&object_type_id=#{@object_type_id}&object_name=#{@hname}&object_label=#{@hname}&object_asset_no=&object_comment=#{@object_comment}&attr_3=#{@fq}&attr_25=#{@uid}&attr_10004=#{@dom}&attr_10043=#{@os}&attr_10044=#{@osrel}&attr_10040=#{@kern}&attr_10041=#{@kernver}&attr_10050=#{@procnt}&attr_10005=#{@mem}"}"
+    #puts url
+     
+    #authenticate and send POST
+    response = httpConnect(url)
+    return response
+     
+  end     
+end
+ 
+ 
+######################
+#      		     #
+#    Main Program    #
+# 		     #
+######################
+ 
+ 
+@log.info "Starting-----------------------------------"
+ 
+generateFacts()
+getAllFacters()
+@object_comment = "created_by_racktables_propel"
+add_object()
+#generate_objectId()
+update_object()
+
+@log.info "End."
+ 
+exit
