@@ -13,7 +13,7 @@ tested and run on Ubuntu 12.04 32 & 64bit. patch for other server soon
 
 ## dependencies
 
-The scrip is design to use the Rackbtales-api forked and release by [ibettinger](https://github.com/ibettinger/racktables) 
+The script is design to use the Rackbtales-api forked and release by [ibettinger](https://github.com/ibettinger/racktables) 
 
 also checkout his workaround on [racktables-py-client](https://github.com/ibettinger/racktables-py-client) - a very cool stuff, I use as a reference
 
